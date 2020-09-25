@@ -1,0 +1,50 @@
+version: '2'
+services:
+    mb-agent:
+        image: registry.cn-hangzhou.aliyuncs.com/cmic_site/mb:agent-1.0
+        container_name: mb-agent
+        restart: always
+        command: python manage.py start_modbus_data_catch
+        environment:
+          SLAVE_ADDRESS: 192.168.0.1
+          REDIS_URL: redis://:3G)p!9dd5S@redis:6379/1
+          DEBUG: 0
+        volumes:
+          - /media/futian/_dde_data/数据报表/:/mb/data
+          - /media/futian/_dde_data/sqlite/db.sqlite3:/mb/sqlite/db.sqlite3
+
+    mb-server:
+        image: registry.cn-hangzhou.aliyuncs.com/cmic_site/mb:agent-1.0
+        container_name: mb-server
+        restart: always
+        command: gunicorn mb.wsgi:application --bind 0.0.0.0:8000 --workers 4
+        environment:
+          SLAVE_ADDRESS: 192.168.0.1
+          REDIS_URL: redis://:3G)p!9dd5S@redis:6379/1
+          DEBUG: 0
+        volumes:
+          - /media/futian/_dde_data/数据报表/:/mb/data
+          - /media/futian/_dde_data/sqlite/db.sqlite3:/mb/sqlite/db.sqlite3
+        ports:
+          - 8000:8000
+
+    nginx:
+      restart: always
+      container_name: nginx
+      image: nginx
+      ports:
+        - 80:80
+        - 443:443
+      volumes:
+        - /media/futian/_dde_data/nginx/conf.d:/etc/nginx/conf.d
+        - /media/futian/_dde_data/nginx/nginx.conf:/etc/nginx/nginx.conf
+        - /media/futian/_dde_data/nginx/log:/var/log/nginx
+        - /media/futian/_dde_data/nginx/www:/var/www
+
+    redis:
+      restart: always
+      image: 'bitnami/redis:latest'
+      container_name: redis
+      environment:
+        - REDIS_PASSWORD=3G)p!9dd5S
+        - REDIS_AOF_ENABLED=no
